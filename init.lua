@@ -2,6 +2,37 @@ vim.opt.number = true
 vim.opt.relativenumber = true
 
 -- ======================
+-- Terminal shell selection
+-- ======================
+
+local is_windows = vim.fn.has("win32") == 1
+local terminal_cmd = nil
+
+if is_windows then
+  if vim.fn.executable("pwsh") == 1 then
+    terminal_cmd = { "pwsh", "-NoLogo" }
+  elseif vim.fn.executable("powershell") == 1 then
+    terminal_cmd = { "powershell", "-NoLogo" }
+  else
+    terminal_cmd = { "cmd" }
+  end
+else
+  local shell = vim.env.SHELL
+
+  if not shell or shell == "" then
+    if vim.fn.executable("zsh") == 1 then
+      shell = "zsh"
+    elseif vim.fn.executable("bash") == 1 then
+      shell = "bash"
+    else
+      shell = "sh"
+    end
+  end
+
+  terminal_cmd = { shell, "-l" }
+end
+
+-- ======================
 -- Keymaps
 -- ======================
 
@@ -30,9 +61,85 @@ vim.keymap.set("n", "<A-y>", "<C-r>", { silent = true })
 vim.keymap.set("i", "<A-y>", "<Esc><C-r>i", { silent = true })
 vim.keymap.set("v", "<A-y>", "<Esc><C-r>", { silent = true })
 
--- unset relative numbers
-vim.opt.number = true
-vim.opt.relativenumber = false
+-- ======================
+-- Terminal
+-- ======================
+
+local function normalize_mode()
+  local mode = vim.api.nvim_get_mode().mode
+
+  if mode == "t" then
+    vim.cmd("stopinsert")
+  elseif mode == "i" then
+    vim.cmd("stopinsert")
+  elseif mode:find("v") then
+    vim.cmd("normal! <Esc>")
+  end
+end
+
+local function open_bottom_terminal()
+  vim.cmd("botright 15split")
+
+  local term_win = vim.api.nvim_get_current_win()
+  local term_buf = vim.api.nvim_create_buf(false, true)
+
+  vim.api.nvim_win_set_buf(term_win, term_buf)
+
+  vim.bo[term_buf].bufhidden = "hide"
+
+  vim.fn.termopen(terminal_cmd)
+  vim.cmd("startinsert")
+end
+
+local function toggle_editor_terminal()
+  local current_win = vim.api.nvim_get_current_win()
+  local current_buf = vim.api.nvim_win_get_buf(current_win)
+  local current_is_terminal = vim.bo[current_buf].buftype == "terminal"
+
+  local wins = vim.api.nvim_tabpage_list_wins(0)
+  local target_win = nil
+
+  for _, win in ipairs(wins) do
+    if win ~= current_win then
+      local buf = vim.api.nvim_win_get_buf(win)
+      local is_terminal = vim.bo[buf].buftype == "terminal"
+
+      if current_is_terminal and not is_terminal then
+        target_win = win
+        break
+      elseif (not current_is_terminal) and is_terminal then
+        target_win = win
+        break
+      end
+    end
+  end
+
+  if target_win then
+    vim.api.nvim_set_current_win(target_win)
+    local buf = vim.api.nvim_win_get_buf(target_win)
+    if vim.bo[buf].buftype == "terminal" then
+      vim.cmd("startinsert")
+    end
+  end
+end
+
+-- Alt+t opens a new terminal at the bottom
+vim.keymap.set({ "n", "i", "v", "t" }, "<A-t>", function()
+  normalize_mode()
+  open_bottom_terminal()
+end, { silent = true, desc = "Open new terminal" })
+
+-- Alt+, switches focus:
+-- terminal -> editor
+-- editor -> terminal
+-- if no opposite window exists, do nothing
+vim.keymap.set({ "n", "i", "v", "t" }, "<A-,>", function()
+  normalize_mode()
+  toggle_editor_terminal()
+end, { silent = true, desc = "Toggle editor/terminal focus" })
+
+-- Esc leaves terminal insert mode
+vim.keymap.set("t", "<Esc>", [[<C-\><C-n>]], { silent = true })
 
 -- ======================
 -- Comments (Alt + .)
@@ -62,7 +169,7 @@ vim.keymap.set("v", "<A-.>", comment_visual, { silent = true })
 vim.keymap.set("i", "<A-.>", comment_insert, { silent = true })
 
 -- ======================
--- indentation
+-- Indentation
 -- ======================
 
 vim.keymap.set("v", "<Tab>", ">gv", { silent = true })
