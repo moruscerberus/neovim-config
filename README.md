@@ -1,50 +1,80 @@
-Neovim Config for Rust and Python development
-=============================================
+# Neovim Config for Rust and Python development
 
-Requirements
-------------
-
+## Requirements
 Rust and NodeJS
 
-Dependencies
-------------
+## Dependencies 
+rustup component add rust-analyzer
+npm install -g pyright
 
-rustup component add rust-analyzernpm install -g pyright
 
-Keybindings
-===========
+# Keybindings
 
-Editing
--------
+## Editing
 
-Alt + ↑ — Move line upAlt + ↓ — Move line downAlt + K — Cut lineAlt + L — Select current lineAlt + Z — UndoAlt + Y — Redo
+| Key | Action |
+|-----|--------|
+| Alt + ↑ | Move line up |
+| Alt + ↓ | Move line down |
+| Alt + K | Cut line |
+| Alt + L | Select current line |
+| Alt + Z | Undo |
+| Alt + Y | Redo |
 
-Commenting
-----------
+## Commenting
 
-Alt + . — Toggle commentAlt + . (selection) — Toggle comments on selected linesAlt + . (insert) — Comment without leaving insert
+| Key | Action |
+|-----|--------|
+| Alt + . | Toggle comment |
+| Alt + . (selection) | Toggle comments on selected lines |
+| Alt + . (insert) | Comment without leaving insert |
 
-Selection (VSCode style)
-------------------------
+## Selection (VSCode style)
 
-Shift + ↑ — Select upShift + ↓ — Select downShift + ← — Select leftShift + → — Select right
+| Key | Action |
+|-----|--------|
+| Shift + ↑ | Select up |
+| Shift + ↓ | Select down |
+| Shift + ← | Select left |
+| Shift + → | Select right |
 
-Indentation
------------
+## Indentation
 
-Tab — Indent rightShift + Tab — Indent leftTab (selection) — Indent selectionShift + Tab (selection) — Unindent selection
+| Key | Action |
+|-----|--------|
+| Tab | Indent right |
+| Shift + Tab | Indent left |
+| Tab (selection) | Indent selection |
+| Shift + Tab (selection) | Unindent selection |
 
-Scrolling
----------
+## Scrolling
 
-Page Up — Scroll upPage Down — Scroll downPage Up (insert) — Scroll upPage Down (insert) — Scroll down
+| Key | Action |
+|-----|--------|
+| Page Up | Scroll up |
+| Page Down | Scroll down |
+| Page Up (insert) | Scroll up |
+| Page Down (insert) | Scroll down |
 
-LSP
----
+## LSP
 
-K — Hover documentationgd — Go to definitiongD — Go to declarationgi — Go to implementationgr — References\[d — Previous diagnostic\]d — Next diagnosticleader + rn — Rename symbolleader + ca — Code action
+| Key | Action |
+|-----|--------|
+| K | Hover documentation |
+| gd | Go to definition |
+| gD | Go to declaration |
+| gi | Go to implementation |
+| gr | References |
+| [d | Previous diagnostic |
+| ]d | Next diagnostic |
+| leader + rn | Rename symbol |
+| leader + ca | Code action |
 
-Autocomplete
-------------
+## Autocomplete
 
-Ctrl + Space — Trigger completionCtrl + n — Next suggestionCtrl + p — Previous suggestionEnter — Confirm selection
+| Key | Action |
+|-----|--------|
+| Ctrl + Space | Trigger completion |
+| Ctrl + n | Next suggestion |
+| Ctrl + p | Previous suggestion |
+| Enter | Confirm selection |
