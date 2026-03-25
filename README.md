@@ -20,6 +20,7 @@ npm install -g pyright
 | Alt + L | Select current line |
 | Alt + Z | Undo |
 | Alt + Y | Redo |
+| Alt + G | Go to line | 
 
 ## Commenting
 
