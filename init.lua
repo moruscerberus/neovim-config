@@ -5,27 +5,105 @@ vim.opt.relativenumber = true
 -- Keymaps
 -- ======================
 
--- move line up/down (normal mode)
-vim.keymap.set("n", "<A-Up>", ":m .-2<CR>==")
-vim.keymap.set("n", "<A-Down>", ":m .+1<CR>==")
+-- move line up/down
+vim.keymap.set("n", "<A-Up>", ":m .-2<CR>==", { silent = true })
+vim.keymap.set("n", "<A-Down>", ":m .+1<CR>==", { silent = true })
 
--- move selected lines (visual mode)
-vim.keymap.set("v", "<A-Up>", ":m '<-2<CR>gv=gv")
-vim.keymap.set("v", "<A-Down>", ":m '>+1<CR>gv=gv")
+vim.keymap.set("v", "<A-Up>", ":m '<-2<CR>gv=gv", { silent = true })
+vim.keymap.set("v", "<A-Down>", ":m '>+1<CR>gv=gv", { silent = true })
 
--- ctrl+k cut selection / line
-vim.keymap.set("v", "<C-k>", '"+d')
-vim.keymap.set("n", "<C-k>", '"+dd')
+-- cut line / selection
+vim.keymap.set("n", "<A-k>", '"+dd', { silent = true })
+vim.keymap.set("v", "<A-k>", '"+d', { silent = true })
 
--- tab indent in visual mode
-vim.keymap.set("v", "<Tab>", ">gv")
-vim.keymap.set("v", "<S-Tab>", "<gv")
-vim.keymap.set("v", "<kBackTab>", "<gv")
+-- select current line
+vim.keymap.set("n", "<A-l>", "V", { silent = true })
+vim.keymap.set("v", "<A-l>", "V", { silent = true })
+vim.keymap.set("i", "<A-l>", "<Esc>V", { silent = true })
 
--- optional: tab / shift-tab in normal mode
-vim.keymap.set("n", "<Tab>", ">>")
-vim.keymap.set("n", "<S-Tab>", "<<")
-vim.keymap.set("n", "<kBackTab>", "<<")
+-- undo / redo
+vim.keymap.set("n", "<A-z>", "u", { silent = true })
+vim.keymap.set("i", "<A-z>", "<Esc>ui", { silent = true })
+vim.keymap.set("v", "<A-z>", "<Esc>u", { silent = true })
+
+vim.keymap.set("n", "<A-y>", "<C-r>", { silent = true })
+vim.keymap.set("i", "<A-y>", "<Esc><C-r>i", { silent = true })
+vim.keymap.set("v", "<A-y>", "<Esc><C-r>", { silent = true })
+
+-- ======================
+-- Comments (Alt + .)
+-- ======================
+
+local function comment_line()
+  require("Comment.api").toggle.linewise.current()
+end
+
+local function comment_visual()
+  local esc = vim.api.nvim_replace_termcodes("<Esc>", true, false, true)
+  vim.api.nvim_feedkeys(esc, "nx", false)
+  require("Comment.api").toggle.linewise(vim.fn.visualmode())
+  vim.schedule(function()
+    vim.cmd("normal! gv")
+  end)
+end
+
+local function comment_insert()
+  vim.cmd("stopinsert")
+  require("Comment.api").toggle.linewise.current()
+  vim.cmd("startinsert")
+end
+
+vim.keymap.set("n", "<A-.>", comment_line, { silent = true })
+vim.keymap.set("v", "<A-.>", comment_visual, { silent = true })
+vim.keymap.set("i", "<A-.>", comment_insert, { silent = true })
+
+-- ======================
+-- indentation
+-- ======================
+
+vim.keymap.set("v", "<Tab>", ">gv", { silent = true })
+vim.keymap.set("v", "<S-Tab>", "<gv", { silent = true })
+
+vim.keymap.set("n", "<Tab>", ">>", { silent = true })
+vim.keymap.set("n", "<S-Tab>", "<<", { silent = true })
+
+-- ======================
+-- Shift selection (VSCode style)
+-- ======================
+
+vim.keymap.set("n", "<S-Up>", "v<Up>")
+vim.keymap.set("n", "<S-Down>", "v<Down>")
+vim.keymap.set("n", "<S-Left>", "v<Left>")
+vim.keymap.set("n", "<S-Right>", "v<Right>")
+
+vim.keymap.set("i", "<S-Up>", "<Esc>v<Up>")
+vim.keymap.set("i", "<S-Down>", "<Esc>v<Down>")
+vim.keymap.set("i", "<S-Left>", "<Esc>v<Left>")
+vim.keymap.set("i", "<S-Right>", "<Esc>v<Right>")
+
+vim.keymap.set("v", "<S-Up>", "<Up>")
+vim.keymap.set("v", "<S-Down>", "<Down>")
+vim.keymap.set("v", "<S-Left>", "<Left>")
+vim.keymap.set("v", "<S-Right>", "<Right>")
+
+-- cancel selection on movement
+vim.keymap.set("v", "<Up>", "<Esc><Up>")
+vim.keymap.set("v", "<Down>", "<Esc><Down>")
+vim.keymap.set("v", "<Left>", "<Esc><Left>")
+vim.keymap.set("v", "<Right>", "<Esc><Right>")
+
+-- ======================
+-- Page scrolling
+-- ======================
+
+vim.keymap.set("n", "<PageUp>", "<C-u>")
+vim.keymap.set("n", "<PageDown>", "<C-d>")
+
+vim.keymap.set("i", "<PageUp>", "<Esc><C-u>")
+vim.keymap.set("i", "<PageDown>", "<Esc><C-d>")
+
+vim.keymap.set("v", "<PageUp>", "<C-u>")
+vim.keymap.set("v", "<PageDown>", "<C-d>")
 
 -- ======================
 -- lazy.nvim bootstrap
@@ -42,6 +120,7 @@ if not vim.loop.fs_stat(lazypath) then
     lazypath,
   })
 end
+
 vim.opt.rtp:prepend(lazypath)
 
 -- ======================
@@ -49,6 +128,14 @@ vim.opt.rtp:prepend(lazypath)
 -- ======================
 
 require("lazy").setup({
+
+  {
+    "numToStr/Comment.nvim",
+    config = function()
+      require("Comment").setup()
+    end,
+  },
+
   {
     "neovim/nvim-lspconfig",
     version = "v1.8.0",
@@ -58,48 +145,36 @@ require("lazy").setup({
       "hrsh7th/cmp-buffer",
       "hrsh7th/cmp-path",
     },
+
     config = function()
       local cmp = require("cmp")
       local lspconfig = require("lspconfig")
       local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
       local on_attach = function(_, bufnr)
-        local opts = { buffer = bufnr, silent = true }
+        local opts = { buffer = bufnr }
 
         vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
         vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
         vim.keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
         vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts)
         vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
-        vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
-        vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
-        vim.keymap.set("n", "<leader>f", function()
-          vim.lsp.buf.format({ async = true })
-        end, opts)
 
         vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
         vim.keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
+
+        vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
+        vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
       end
 
-      -- Rust
       lspconfig.rust_analyzer.setup({
         capabilities = capabilities,
         on_attach = on_attach,
       })
 
-      -- Python
       lspconfig.pyright.setup({
         capabilities = capabilities,
         on_attach = on_attach,
-        settings = {
-          python = {
-            analysis = {
-              autoSearchPaths = true,
-              useLibraryCodeForTypes = true,
-              diagnosticMode = "workspace",
-            },
-          },
-        },
       })
 
       cmp.setup({
@@ -109,13 +184,14 @@ require("lazy").setup({
           ["<C-p>"] = cmp.mapping.select_prev_item(),
           ["<CR>"] = cmp.mapping.confirm({ select = true }),
         }),
-        sources = cmp.config.sources({
+
+        sources = {
           { name = "nvim_lsp" },
           { name = "path" },
-        }, {
           { name = "buffer" },
-        }),
+        },
       })
     end,
   },
+
 })
