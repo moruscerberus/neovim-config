@@ -111,6 +111,28 @@ vim.keymap.set("n", "<A-y>", "<C-r>", { silent = true })
 vim.keymap.set("i", "<A-y>", "<Esc><C-r>i", { silent = true })
 vim.keymap.set("v", "<A-y>", "<Esc><C-r>", { silent = true })
 
+-- Shift selection (VSCode style)
+vim.keymap.set("n", "<S-Up>", "v<Up>", { silent = true })
+vim.keymap.set("n", "<S-Down>", "v<Down>", { silent = true })
+vim.keymap.set("n", "<S-Left>", "v<Left>", { silent = true })
+vim.keymap.set("n", "<S-Right>", "v<Right>", { silent = true })
+
+vim.keymap.set("i", "<S-Up>", "<Esc>v<Up>", { silent = true })
+vim.keymap.set("i", "<S-Down>", "<Esc>v<Down>", { silent = true })
+vim.keymap.set("i", "<S-Left>", "<Esc>v<Left>", { silent = true })
+vim.keymap.set("i", "<S-Right>", "<Esc>v<Right>", { silent = true })
+
+vim.keymap.set("v", "<S-Up>", "<Up>", { silent = true })
+vim.keymap.set("v", "<S-Down>", "<Down>", { silent = true })
+vim.keymap.set("v", "<S-Left>", "<Left>", { silent = true })
+vim.keymap.set("v", "<S-Right>", "<Right>", { silent = true })
+
+-- cancel selection on plain movement
+vim.keymap.set("v", "<Up>", "<Esc><Up>", { silent = true })
+vim.keymap.set("v", "<Down>", "<Esc><Down>", { silent = true })
+vim.keymap.set("v", "<Left>", "<Esc><Left>", { silent = true })
+vim.keymap.set("v", "<Right>", "<Esc><Right>", { silent = true })
+
 -- ======================
 -- Terminal
 -- ======================
@@ -131,7 +153,7 @@ end
 vim.keymap.set({ "n", "i", "v", "t" }, "<A-t>", function()
   normalize_mode()
   open_bottom_terminal()
-end, { silent = true, desc = "Open new terminal" })
+end, { silent = true })
 
 vim.keymap.set("t", "<Esc>", [[<C-\><C-n>]], { silent = true })
 
@@ -139,43 +161,22 @@ vim.keymap.set("t", "<Esc>", [[<C-\><C-n>]], { silent = true })
 -- Editor panes
 -- ======================
 
-local function open_file_picker_right()
-  local dir = vim.fn.expand("%:p:h")
-  if dir == "" then
-    dir = vim.loop.cwd()
-  end
-
-  local entries = vim.fn.readdir(dir)
-  local files = {}
-
-  for _, name in ipairs(entries) do
-    local full = dir .. "/" .. name
-    if vim.fn.isdirectory(full) == 0 then
-      table.insert(files, name)
-    end
-  end
-
-  table.sort(files)
-
+local function open_editor_right()
   vim.cmd("rightbelow vsplit")
-  vim.cmd("enew")
 
-  vim.ui.select(files, {
-    prompt = "Files: " .. dir,
-  }, function(choice)
-    if not choice then
-      return
-    end
+  local file = vim.fn.input("Open file: ", "", "file")
 
-    local target = dir .. "/" .. choice
-    vim.cmd("edit " .. vim.fn.fnameescape(target))
-  end)
+  if file ~= nil and file ~= "" then
+    vim.cmd("edit " .. vim.fn.fnameescape(file))
+  else
+    vim.cmd("enew")
+  end
 end
 
 vim.keymap.set({ "n", "i", "v", "t" }, "<A-n>", function()
   normalize_mode()
-  open_file_picker_right()
-end, { silent = true, desc = "Open editor to the right" })
+  open_editor_right()
+end, { silent = true })
 
 -- ======================
 -- Window switching
@@ -184,7 +185,7 @@ end, { silent = true, desc = "Open editor to the right" })
 vim.keymap.set({ "n", "i", "v", "t" }, "<A-,>", function()
   normalize_mode()
   cycle_windows()
-end, { silent = true, desc = "Cycle windows" })
+end, { silent = true })
 
 -- ======================
 -- Comments (Alt + .)
@@ -224,31 +225,6 @@ vim.keymap.set("n", "<Tab>", ">>", { silent = true })
 vim.keymap.set("n", "<S-Tab>", "<<", { silent = true })
 
 -- ======================
--- Shift selection (VSCode style)
--- ======================
-
-vim.keymap.set("n", "<S-Up>", "v<Up>")
-vim.keymap.set("n", "<S-Down>", "v<Down>")
-vim.keymap.set("n", "<S-Left>", "v<Left>")
-vim.keymap.set("n", "<S-Right>", "v<Right>")
-
-vim.keymap.set("i", "<S-Up>", "<Esc>v<Up>")
-vim.keymap.set("i", "<S-Down>", "<Esc>v<Down>")
-vim.keymap.set("i", "<S-Left>", "<Esc>v<Left>")
-vim.keymap.set("i", "<S-Right>", "<Esc>v<Right>")
-
-vim.keymap.set("v", "<S-Up>", "<Up>")
-vim.keymap.set("v", "<S-Down>", "<Down>")
-vim.keymap.set("v", "<S-Left>", "<Left>")
-vim.keymap.set("v", "<S-Right>", "<Right>")
-
--- cancel selection on movement
-vim.keymap.set("v", "<Up>", "<Esc><Up>")
-vim.keymap.set("v", "<Down>", "<Esc><Down>")
-vim.keymap.set("v", "<Left>", "<Esc><Left>")
-vim.keymap.set("v", "<Right>", "<Esc><Right>")
-
--- ======================
 -- Page scrolling
 -- ======================
 
@@ -267,36 +243,22 @@ vim.keymap.set("v", "<PageDown>", "<C-d>")
 
 local function goto_line()
   local line = vim.fn.input("Go to line: ")
-
-  if line == nil or line == "" then
-    return
-  end
+  if line == nil or line == "" then return end
 
   local num = tonumber(line)
-  if not num then
-    return
-  end
+  if not num then return end
 
-  local last_line = vim.api.nvim_buf_line_count(0)
-  num = math.max(1, math.min(num, last_line))
+  local last = vim.api.nvim_buf_line_count(0)
+  num = math.max(1, math.min(num, last))
 
   vim.api.nvim_win_set_cursor(0, { num, 0 })
   vim.cmd("normal! zz")
 end
 
-vim.keymap.set("n", "<A-g>", goto_line, { silent = true, desc = "Go to line" })
-vim.keymap.set("i", "<A-g>", function()
-  vim.cmd("stopinsert")
+vim.keymap.set({ "n", "i", "v", "t" }, "<A-g>", function()
+  normalize_mode()
   goto_line()
-end, { silent = true, desc = "Go to line" })
-vim.keymap.set("v", "<A-g>", function()
-  vim.cmd("normal! <Esc>")
-  goto_line()
-end, { silent = true, desc = "Go to line" })
-vim.keymap.set("t", "<A-g>", function()
-  vim.cmd("stopinsert")
-  goto_line()
-end, { silent = true, desc = "Go to line" })
+end, { silent = true })
 
 -- ======================
 -- lazy.nvim bootstrap
@@ -322,69 +284,63 @@ vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
 
-  {
-    "numToStr/Comment.nvim",
-    config = function()
-      require("Comment").setup()
-    end,
+{
+  "numToStr/Comment.nvim",
+  config = function()
+    require("Comment").setup()
+  end,
+},
+
+{
+  "neovim/nvim-lspconfig",
+  version = "v1.8.0",
+  dependencies = {
+    "hrsh7th/nvim-cmp",
+    "hrsh7th/cmp-nvim-lsp",
+    "hrsh7th/cmp-buffer",
+    "hrsh7th/cmp-path",
   },
 
-  {
-    "neovim/nvim-lspconfig",
-    version = "v1.8.0",
-    dependencies = {
-      "hrsh7th/nvim-cmp",
-      "hrsh7th/cmp-nvim-lsp",
-      "hrsh7th/cmp-buffer",
-      "hrsh7th/cmp-path",
-    },
+  config = function()
+    local cmp = require("cmp")
+    local lspconfig = require("lspconfig")
+    local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
-    config = function()
-      local cmp = require("cmp")
-      local lspconfig = require("lspconfig")
-      local capabilities = require("cmp_nvim_lsp").default_capabilities()
+    local on_attach = function(_, bufnr)
+      local opts = { buffer = bufnr }
 
-      local on_attach = function(_, bufnr)
-        local opts = { buffer = bufnr }
+      vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+      vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+      vim.keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
+      vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts)
+      vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
+    end
 
-        vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
-        vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
-        vim.keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
-        vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts)
-        vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
+    lspconfig.rust_analyzer.setup({
+      capabilities = capabilities,
+      on_attach = on_attach,
+    })
 
-        vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
-        vim.keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
+    lspconfig.pyright.setup({
+      capabilities = capabilities,
+      on_attach = on_attach,
+    })
 
-        vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
-        vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
-      end
+    cmp.setup({
+      mapping = cmp.mapping.preset.insert({
+        ["<C-Space>"] = cmp.mapping.complete(),
+        ["<C-n>"] = cmp.mapping.select_next_item(),
+        ["<C-p>"] = cmp.mapping.select_prev_item(),
+        ["<CR>"] = cmp.mapping.confirm({ select = true }),
+      }),
 
-      lspconfig.rust_analyzer.setup({
-        capabilities = capabilities,
-        on_attach = on_attach,
-      })
-
-      lspconfig.pyright.setup({
-        capabilities = capabilities,
-        on_attach = on_attach,
-      })
-
-      cmp.setup({
-        mapping = cmp.mapping.preset.insert({
-          ["<C-Space>"] = cmp.mapping.complete(),
-          ["<C-n>"] = cmp.mapping.select_next_item(),
-          ["<C-p>"] = cmp.mapping.select_prev_item(),
-          ["<CR>"] = cmp.mapping.confirm({ select = true }),
-        }),
-
-        sources = {
-          { name = "nvim_lsp" },
-          { name = "path" },
-          { name = "buffer" },
-        },
-      })
-    end,
-  },
+      sources = {
+        { name = "nvim_lsp" },
+        { name = "path" },
+        { name = "buffer" },
+      },
+    })
+  end,
+},
 
 })
