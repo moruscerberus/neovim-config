@@ -60,10 +60,46 @@ require("lazy").setup({
     },
     config = function()
       local cmp = require("cmp")
+      local lspconfig = require("lspconfig")
       local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
-      require("lspconfig").rust_analyzer.setup({
+      local on_attach = function(_, bufnr)
+        local opts = { buffer = bufnr, silent = true }
+
+        vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+        vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+        vim.keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
+        vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts)
+        vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
+        vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
+        vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
+        vim.keymap.set("n", "<leader>f", function()
+          vim.lsp.buf.format({ async = true })
+        end, opts)
+
+        vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
+        vim.keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
+      end
+
+      -- Rust
+      lspconfig.rust_analyzer.setup({
         capabilities = capabilities,
+        on_attach = on_attach,
+      })
+
+      -- Python
+      lspconfig.pyright.setup({
+        capabilities = capabilities,
+        on_attach = on_attach,
+        settings = {
+          python = {
+            analysis = {
+              autoSearchPaths = true,
+              useLibraryCodeForTypes = true,
+              diagnosticMode = "workspace",
+            },
+          },
+        },
       })
 
       cmp.setup({
