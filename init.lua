@@ -33,6 +33,56 @@ else
 end
 
 -- ======================
+-- Helpers
+-- ======================
+
+local function normalize_mode()
+  local mode = vim.api.nvim_get_mode().mode
+
+  if mode == "t" then
+    vim.cmd("stopinsert")
+  elseif mode == "i" then
+    vim.cmd("stopinsert")
+  elseif mode:find("v") then
+    vim.cmd("normal! <Esc>")
+  end
+end
+
+local function focus_window(win)
+  if win and vim.api.nvim_win_is_valid(win) then
+    vim.api.nvim_set_current_win(win)
+    local buf = vim.api.nvim_win_get_buf(win)
+    if vim.bo[buf].buftype == "terminal" then
+      vim.cmd("startinsert")
+    end
+  end
+end
+
+local function cycle_windows()
+  local wins = vim.api.nvim_tabpage_list_wins(0)
+  if #wins <= 1 then
+    return
+  end
+
+  local current = vim.api.nvim_get_current_win()
+  local current_index = 1
+
+  for i, win in ipairs(wins) do
+    if win == current then
+      current_index = i
+      break
+    end
+  end
+
+  local next_index = current_index + 1
+  if next_index > #wins then
+    next_index = 1
+  end
+
+  focus_window(wins[next_index])
+end
+
+-- ======================
 -- Keymaps
 -- ======================
 
@@ -65,18 +115,6 @@ vim.keymap.set("v", "<A-y>", "<Esc><C-r>", { silent = true })
 -- Terminal
 -- ======================
 
-local function normalize_mode()
-  local mode = vim.api.nvim_get_mode().mode
-
-  if mode == "t" then
-    vim.cmd("stopinsert")
-  elseif mode == "i" then
-    vim.cmd("stopinsert")
-  elseif mode:find("v") then
-    vim.cmd("normal! <Esc>")
-  end
-end
-
 local function open_bottom_terminal()
   vim.cmd("botright 15split")
 
@@ -84,62 +122,69 @@ local function open_bottom_terminal()
   local term_buf = vim.api.nvim_create_buf(false, true)
 
   vim.api.nvim_win_set_buf(term_win, term_buf)
-
   vim.bo[term_buf].bufhidden = "hide"
 
   vim.fn.termopen(terminal_cmd)
   vim.cmd("startinsert")
 end
 
-local function toggle_editor_terminal()
-  local current_win = vim.api.nvim_get_current_win()
-  local current_buf = vim.api.nvim_win_get_buf(current_win)
-  local current_is_terminal = vim.bo[current_buf].buftype == "terminal"
-
-  local wins = vim.api.nvim_tabpage_list_wins(0)
-  local target_win = nil
-
-  for _, win in ipairs(wins) do
-    if win ~= current_win then
-      local buf = vim.api.nvim_win_get_buf(win)
-      local is_terminal = vim.bo[buf].buftype == "terminal"
-
-      if current_is_terminal and not is_terminal then
-        target_win = win
-        break
-      elseif (not current_is_terminal) and is_terminal then
-        target_win = win
-        break
-      end
-    end
-  end
-
-  if target_win then
-    vim.api.nvim_set_current_win(target_win)
-    local buf = vim.api.nvim_win_get_buf(target_win)
-    if vim.bo[buf].buftype == "terminal" then
-      vim.cmd("startinsert")
-    end
-  end
-end
-
--- Alt+t opens a new terminal at the bottom
 vim.keymap.set({ "n", "i", "v", "t" }, "<A-t>", function()
   normalize_mode()
   open_bottom_terminal()
 end, { silent = true, desc = "Open new terminal" })
 
--- Alt+, switches focus:
--- terminal -> editor
--- editor -> terminal
--- if no opposite window exists, do nothing
+vim.keymap.set("t", "<Esc>", [[<C-\><C-n>]], { silent = true })
+
+-- ======================
+-- Editor panes
+-- ======================
+
+local function open_file_picker_right()
+  local dir = vim.fn.expand("%:p:h")
+  if dir == "" then
+    dir = vim.loop.cwd()
+  end
+
+  local entries = vim.fn.readdir(dir)
+  local files = {}
+
+  for _, name in ipairs(entries) do
+    local full = dir .. "/" .. name
+    if vim.fn.isdirectory(full) == 0 then
+      table.insert(files, name)
+    end
+  end
+
+  table.sort(files)
+
+  vim.cmd("rightbelow vsplit")
+  vim.cmd("enew")
+
+  vim.ui.select(files, {
+    prompt = "Files: " .. dir,
+  }, function(choice)
+    if not choice then
+      return
+    end
+
+    local target = dir .. "/" .. choice
+    vim.cmd("edit " .. vim.fn.fnameescape(target))
+  end)
+end
+
+vim.keymap.set({ "n", "i", "v", "t" }, "<A-n>", function()
+  normalize_mode()
+  open_file_picker_right()
+end, { silent = true, desc = "Open editor to the right" })
+
+-- ======================
+-- Window switching
+-- ======================
+
 vim.keymap.set({ "n", "i", "v", "t" }, "<A-,>", function()
   normalize_mode()
-  toggle_editor_terminal()
-end, { silent = true, desc = "Toggle editor/terminal focus" })
-
--- Esc leaves terminal insert mode
-vim.keymap.set("t", "<Esc>", [[<C-\><C-n>]], { silent = true })
+  cycle_windows()
+end, { silent = true, desc = "Cycle windows" })
 
 -- ======================
 -- Comments (Alt + .)
@@ -235,7 +280,8 @@ local function goto_line()
   local last_line = vim.api.nvim_buf_line_count(0)
   num = math.max(1, math.min(num, last_line))
 
-  vim.cmd(tostring(num))
+  vim.api.nvim_win_set_cursor(0, { num, 0 })
+  vim.cmd("normal! zz")
 end
 
 vim.keymap.set("n", "<A-g>", goto_line, { silent = true, desc = "Go to line" })
@@ -245,6 +291,10 @@ vim.keymap.set("i", "<A-g>", function()
 end, { silent = true, desc = "Go to line" })
 vim.keymap.set("v", "<A-g>", function()
   vim.cmd("normal! <Esc>")
+  goto_line()
+end, { silent = true, desc = "Go to line" })
+vim.keymap.set("t", "<A-g>", function()
+  vim.cmd("stopinsert")
   goto_line()
 end, { silent = true, desc = "Go to line" })
 
