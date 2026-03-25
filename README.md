@@ -84,5 +84,6 @@ npm install -g pyright
 | Key | Action |
 |-----|--------|
 | Alt + t | Open terminal | 
+| Alt + , | Toggle focused window |
 
 Also autodetects native terminal and uses tab for autocomplete like normal
