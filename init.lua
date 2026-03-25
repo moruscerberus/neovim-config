@@ -30,6 +30,10 @@ vim.keymap.set("n", "<A-y>", "<C-r>", { silent = true })
 vim.keymap.set("i", "<A-y>", "<Esc><C-r>i", { silent = true })
 vim.keymap.set("v", "<A-y>", "<Esc><C-r>", { silent = true })
 
+-- unset relative numbers
+vim.opt.number = true
+vim.opt.relativenumber = false
+
 -- ======================
 -- Comments (Alt + .)
 -- ======================
