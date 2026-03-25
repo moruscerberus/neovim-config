@@ -1,5 +1,5 @@
 vim.opt.number = true
-vim.opt.relativenumber = true
+vim.opt.relativenumber = false
 
 -- ======================
 -- Terminal shell selection
@@ -215,6 +215,38 @@ vim.keymap.set("i", "<PageDown>", "<Esc><C-d>")
 
 vim.keymap.set("v", "<PageUp>", "<C-u>")
 vim.keymap.set("v", "<PageDown>", "<C-d>")
+
+-- ======================
+-- Go to line
+-- ======================
+
+local function goto_line()
+  local line = vim.fn.input("Go to line: ")
+
+  if line == nil or line == "" then
+    return
+  end
+
+  local num = tonumber(line)
+  if not num then
+    return
+  end
+
+  local last_line = vim.api.nvim_buf_line_count(0)
+  num = math.max(1, math.min(num, last_line))
+
+  vim.cmd(tostring(num))
+end
+
+vim.keymap.set("n", "<A-g>", goto_line, { silent = true, desc = "Go to line" })
+vim.keymap.set("i", "<A-g>", function()
+  vim.cmd("stopinsert")
+  goto_line()
+end, { silent = true, desc = "Go to line" })
+vim.keymap.set("v", "<A-g>", function()
+  vim.cmd("normal! <Esc>")
+  goto_line()
+end, { silent = true, desc = "Go to line" })
 
 -- ======================
 -- lazy.nvim bootstrap
