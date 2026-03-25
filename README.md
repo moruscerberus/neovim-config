@@ -80,6 +80,7 @@ npm install -g pyright
 | Enter | Confirm selection |
 
 ## Terminal 
+
 | Key | Action |
 | Alt + t | Open terminal | 
 
