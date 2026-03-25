@@ -21,6 +21,7 @@ npm install -g pyright
 | Alt + Z | Undo |
 | Alt + Y | Redo |
 | Alt + G | Go to line | 
+| Alt + N | Open new editor on the right |
 
 ## Commenting
 
